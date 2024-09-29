@@ -29,11 +29,11 @@ import {VRFV2PlusClient} from "chainlink/contracts/src/v0.8/vrf/dev/libraries/VR
 
 import {VRFConsumerBaseV2Plus} from "chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 /**
-* @title A sample Raffle contract
-* @author Alex Primak
-* @notice This contract is for creating a sample raffle
-* @dev It implements chainlink VRFv2 and Chainlink Automation
-*/
+ * @title A sample Raffle contract
+ * @author Alex Primak
+ * @notice This contract is for creating a sample raffle
+ * @dev It implements chainlink VRFv2 and Chainlink Automation
+ */
 
 contract Raffle is VRFConsumerBaseV2Plus {
     /* Errors */
@@ -122,29 +122,33 @@ contract Raffle is VRFConsumerBaseV2Plus {
     function checkUpkeep(bytes memory /* checkData */ )
         public
         view
-        returns (bool upkeepNeeded, bytes memory /* performData */ ) //when we write it like this it automatically creates upkeepNeeded and defaults it
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */ //when we write it like this it automatically creates upkeepNeeded and defaults it
+        )
     {
         bool timeHasPassed = (block.timestamp - s_lastTimeStamp >= i_interval);
         bool isOpen = s_raffleState == RaffleState.OPEN;
         bool hasBalance = address(this).balance > 0;
         bool hasPlayers = s_players.length > 0;
         upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
-        return(upkeepNeeded, "");
+        return (upkeepNeeded, "");
     }
     // 1. Get a random number
     // 2. Use random number to pick a player
     // 3, Be automatically called
     // Anything generated from Smart Contract can never be a calldata, calldata can only be generated from users tx input
-    function performUpkeep(bytes calldata /* performData */) external {
+
+    function performUpkeep(bytes calldata /* performData */ ) external {
         // check to see if enought time has passsed
 
         // 1000 - 900 = 100
         // if (block.timestamp - s_lastTimeStamp < i_interval) {
         //     revert Raffle__NotEnoughTime();
         // }
-        (bool upkeepNeeded, ) = checkUpkeep("");
-        if(!upkeepNeeded) {
-            revert Raffle__UpkeepNotNeeded(address(this).balance,s_players.length, uint256(s_raffleState));
+        (bool upkeepNeeded,) = checkUpkeep("");
+        if (!upkeepNeeded) {
+            revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
         }
         s_raffleState = RaffleState.CALCULATING;
         // Get our random number from Chainlink
@@ -165,11 +169,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
         });
         //and then here we are pasting a struct to requestRandomWords
         s_vrfCoordinator.requestRandomWords(request);
-        // uint256 requestId = 
+        // uint256 requestId =
     }
     //CEI: Checks, Effects, Interactions Pattern
 
-    function fulfillRandomWords(uint256 /*requestId*/, uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(uint256, /*requestId*/ uint256[] calldata randomWords) internal override {
         //Checks
         //for now we don't have checks like require etc
         //it is just more gas efficient to make checks at the top, as if we do not meet any of the check we immideately revert
