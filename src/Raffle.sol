@@ -28,7 +28,7 @@ pragma solidity ^0.8.18;
 import {VRFV2PlusClient} from "chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
 import {VRFConsumerBaseV2Plus} from "chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-/* 
+/**
 * @title A sample Raffle contract
 * @author Alex Primak
 * @notice This contract is for creating a sample raffle
@@ -38,9 +38,9 @@ import {VRFConsumerBaseV2Plus} from "chainlink/contracts/src/v0.8/vrf/dev/VRFCon
 contract Raffle is VRFConsumerBaseV2Plus {
     /* Errors */
     error Raffle__SendMoreToEnterRuffle();
-    error Raffle__NotEnoughTime();
     error Raffle__TransferFailed();
     error Raffle__RaffleNotOpen();
+    error Raffle__UpkeepNotNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
 
     /* Type Declarations */
     enum RaffleState {
@@ -81,7 +81,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         i_subscribtionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
 
-        // @dev when we deploy contract we set lastTimeStapt to the latest timestamp for now
+        /// @dev when we deploy contract we set lastTimeStapt to the latest timestamp for now
         s_lastTimeStamp = block.timestamp;
         s_raffleState = RaffleState.OPEN;
     }
@@ -113,27 +113,38 @@ contract Raffle is VRFConsumerBaseV2Plus {
      * The following should be true in order for the upkeepNeeded to be true:
      * 1. The time interval has passed between raffle runs
      * 2. The lottery is open
-     * 3. The contract has ETH
+     * 3. The contract has ETH (has players)
      * 4. Implicitly you subscription has LINK
      * @param - ignored
      * @return upkeepNeeded - true if it's time to restart lottery
      * @return - ignored
      */
-    function checkUpkeep(bytes calldata /* checkData */ )
+    function checkUpkeep(bytes memory /* checkData */ )
         public
         view
-        returns (bool upkeepNeeded, bytes memory /* performData */ )
-    {}
+        returns (bool upkeepNeeded, bytes memory /* performData */ ) //when we write it like this it automatically creates upkeepNeeded and defaults it
+    {
+        bool timeHasPassed = (block.timestamp - s_lastTimeStamp >= i_interval);
+        bool isOpen = s_raffleState == RaffleState.OPEN;
+        bool hasBalance = address(this).balance > 0;
+        bool hasPlayers = s_players.length > 0;
+        upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
+        return(upkeepNeeded, "");
+    }
     // 1. Get a random number
     // 2. Use random number to pick a player
     // 3, Be automatically called
-
-    function pickWinnder() external {
+    // Anything generated from Smart Contract can never be a calldata, calldata can only be generated from users tx input
+    function performUpkeep(bytes calldata /* performData */) external {
         // check to see if enought time has passsed
 
         // 1000 - 900 = 100
-        if (block.timestamp - s_lastTimeStamp < i_interval) {
-            revert Raffle__NotEnoughTime();
+        // if (block.timestamp - s_lastTimeStamp < i_interval) {
+        //     revert Raffle__NotEnoughTime();
+        // }
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        if(!upkeepNeeded) {
+            revert Raffle__UpkeepNotNeeded(address(this).balance,s_players.length, uint256(s_raffleState));
         }
         s_raffleState = RaffleState.CALCULATING;
         // Get our random number from Chainlink
@@ -153,11 +164,12 @@ contract Raffle is VRFConsumerBaseV2Plus {
             )
         });
         //and then here we are pasting a struct to requestRandomWords
-        uint256 requestId = s_vrfCoordinator.requestRandomWords(request);
+        s_vrfCoordinator.requestRandomWords(request);
+        // uint256 requestId = 
     }
     //CEI: Checks, Effects, Interactions Pattern
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(uint256 /*requestId*/, uint256[] calldata randomWords) internal override {
         //Checks
         //for now we don't have checks like require etc
         //it is just more gas efficient to make checks at the top, as if we do not meet any of the check we immideately revert
