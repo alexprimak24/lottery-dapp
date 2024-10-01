@@ -5,6 +5,7 @@ pragma solidity ^0.8.18;
 import {Script} from "forge-std/Script.sol";
 import {Raffle} from "src/Raffle.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {LinkToken} from "test/mocks/LinkToken.sol";
 
 abstract contract CodeConstants {
     /* VRF Mock Values */
@@ -27,6 +28,7 @@ contract HelperConfig is Script, CodeConstants {
         bytes32 gasLane;
         uint256 subscriptionId;
         uint32 callbackGasLimit;
+        address link;
     }
 
     NetworkConfig public localNetworkConfig;
@@ -51,15 +53,17 @@ contract HelperConfig is Script, CodeConstants {
     }
 
     function getSepoliaEthConfig() public pure returns (NetworkConfig memory) {
-        return NetworkConfig({
-            entranceFee: 0.01 ether, //1e16
-            interval: 30, //30 seconds
-            vrfCoordinator: 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625,
-            gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
-            callbackGasLimit: 500000, //500,000 gas
-            subscriptionId: 0
-        });
-    }
+    return NetworkConfig({
+        entranceFee: 0.01 ether, //1e16
+        interval: 30, //30 seconds
+        vrfCoordinator: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B, 
+        gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
+        callbackGasLimit: 500000, //500,000 gas
+        subscriptionId: 27523735170472250636816433396458186043379581731642470746351005516348833618321,
+        link: 0x779877A7B0D9E8603169DdbD7836e478b4624789 
+    });
+}
+
 
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
         //check to see if we set an active network config
@@ -71,6 +75,7 @@ contract HelperConfig is Script, CodeConstants {
         vm.startBroadcast();
         VRFCoordinatorV2_5Mock vrfCoordinatorMock =
             new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK);
+        LinkToken linkToken = new LinkToken();
         vm.stopBroadcast();
 
         localNetworkConfig = NetworkConfig({
@@ -80,7 +85,8 @@ contract HelperConfig is Script, CodeConstants {
             //doesn't matter
             gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
             callbackGasLimit: 500000, //500,000 gas
-            subscriptionId: 0 // might have to fix this
+            subscriptionId: 0, // might have to fix this
+            link: address(linkToken)
         });
         return localNetworkConfig;
     }
