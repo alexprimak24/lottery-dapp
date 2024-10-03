@@ -211,10 +211,11 @@ contract Raffletest is Test {
     //this is called fuzz test, we set that as a parameter of our fulfillRandomWords
     //we are going to paste value from function input, and once we wrote forge test
     //it runned and tried to break our test (by default 256 times).
-    /**  @notice in foundry.toml you may manually write how much times your test would run
+    /**
+     * @notice in foundry.toml you may manually write how much times your test would run
      *  [fuzz]
-     *  runs = 1000 
-    */
+     *  runs = 1000
+     */
     function testFulfillrandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestId) public raffleEntered {
         // Arrange / Act / Assert
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
@@ -223,13 +224,13 @@ contract Raffletest is Test {
 
     function testFulfillrandomWordsPicksAWinnerResetsAndSendsMoney() public raffleEntered {
         //raffleEntered - with that we already have a player
-        
+
         // Arrange
         uint256 additionalEntrants = 3; // 4 overall with raffleEntered
         uint256 startingIndex = 1;
         address expectedWinner = address(1);
 
-        for(uint256 i = startingIndex; i < startingIndex + additionalEntrants; i++) {
+        for (uint256 i = startingIndex; i < startingIndex + additionalEntrants; i++) {
             address newPlayer = address(uint160(i)); //this is like some cheaty way to convert any number to an address
             //this does vm.prank and vm.deal - so it emulates and funds a new wallet
             hoax(newPlayer, 1 ether);
@@ -237,7 +238,7 @@ contract Raffletest is Test {
         }
         uint256 startingTimeStamp = raffle.getLastTimeStamp();
         uint256 winnerStartingBalance = expectedWinner.balance;
-        
+
         // Act
         vm.recordLogs();
         //this is going to kick off chainlinkVRF
@@ -261,7 +262,7 @@ contract Raffletest is Test {
 
         assert(recentWinner == expectedWinner);
         assert(uint256(raffleState) == 0);
-        assert(winnerBalance == winnerStartingBalance + prize); 
+        assert(winnerBalance == winnerStartingBalance + prize);
         assert(endingTimeStamp > startingTimeStamp);
     }
 }
