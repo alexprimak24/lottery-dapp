@@ -66,6 +66,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     /* Events */
     event RaffleEntered(address indexed player);
     event WinnerPicked(address indexed winner);
+    event RequestedRaffleWinner(uint256 indexed requestId);
 
     constructor(
         uint256 entranceFee,
@@ -168,8 +169,10 @@ contract Raffle is VRFConsumerBaseV2Plus {
             )
         });
         //and then here we are pasting a struct to requestRandomWords
-        s_vrfCoordinator.requestRandomWords(request);
-        // uint256 requestId =
+        uint256 requestId = s_vrfCoordinator.requestRandomWords(request);
+        //This is redundant - as requestrandomWords also emits this event
+        //but we will leave it here as it makes testing easier
+        emit RequestedRaffleWinner(requestId);
     }
     //CEI: Checks, Effects, Interactions Pattern
 
@@ -206,12 +209,19 @@ contract Raffle is VRFConsumerBaseV2Plus {
         return i_entranceFee;
     }
 
-    function getRaffleState() external view returns(RaffleState) {
+    function getRaffleState() external view returns (RaffleState) {
         return s_raffleState;
     }
 
-    function getPlayer(uint256 indexOfPlayer) external view returns(address)
-    {
+    function getPlayer(uint256 indexOfPlayer) external view returns (address) {
         return s_players[indexOfPlayer];
+    }
+
+    function getLastTimeStamp() external view returns (uint256) {
+        return s_lastTimeStamp;
+    }
+
+    function getRecentWinner() external view returns (address) {
+        return s_recentWinner;
     }
 }

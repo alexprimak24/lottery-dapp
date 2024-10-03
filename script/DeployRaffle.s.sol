@@ -5,7 +5,7 @@ pragma solidity ^0.8.18;
 import {Script} from "forge-std/Script.sol";
 import {Raffle} from "src/Raffle.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
-import {CreateSubscription,FundSubscribtion,AddConsumer} from "script/Interactions.s.sol";
+import {CreateSubscription, FundSubscribtion, AddConsumer} from "script/Interactions.s.sol";
 
 contract DeployRaffle is Script {
     function run() public {
@@ -18,14 +18,15 @@ contract DeployRaffle is Script {
         // sepolia -> get sepolia config
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
-        if(config.subscriptionId == 0) {
+        if (config.subscriptionId == 0) {
             // create subscribtion
             CreateSubscription createSubscribtion = new CreateSubscription();
-            (config.subscriptionId, config.vrfCoordinator) = createSubscribtion.createSubscription(config.vrfCoordinator);
-        
+            (config.subscriptionId, config.vrfCoordinator) =
+                createSubscribtion.createSubscription(config.vrfCoordinator);
+
             //FundIt
             FundSubscribtion fundSubscribtion = new FundSubscribtion();
-            fundSubscribtion.fundSubscribtion(config.vrfCoordinator,config.subscriptionId,config.link);
+            fundSubscribtion.fundSubscribtion(config.vrfCoordinator, config.subscriptionId, config.link);
         }
 
         vm.startBroadcast();
@@ -41,7 +42,7 @@ contract DeployRaffle is Script {
 
         AddConsumer addConsumer = new AddConsumer();
         //we don't need to add start and stop broadcast as in addConsumer - we already have it
-        addConsumer.addConsumer(address(raffle),config.vrfCoordinator,config.subscriptionId);
+        addConsumer.addConsumer(address(raffle), config.vrfCoordinator, config.subscriptionId);
         return (raffle, helperConfig);
     }
 }
