@@ -8,8 +8,9 @@ import {Raffle} from "../../src/Raffle.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {CodeConstants} from "script/HelperConfig.s.sol";
 
-contract Raffletest is Test {
+contract Raffletest is CodeConstants , Test {
     Raffle public raffle;
     HelperConfig public helperConfig;
 
@@ -216,13 +217,21 @@ contract Raffletest is Test {
      *  [fuzz]
      *  runs = 1000
      */
-    function testFulfillrandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestId) public raffleEntered {
+
+    modifier skipForm() {
+        if(block.chainid != LOCAL_CHAIN_ID) {
+            return;
+        }
+        _;
+    }
+
+    function testFulfillrandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestId) public raffleEntered skipForm {
         // Arrange / Act / Assert
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
         VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(randomRequestId, address(raffle));
     }
 
-    function testFulfillrandomWordsPicksAWinnerResetsAndSendsMoney() public raffleEntered {
+    function testFulfillrandomWordsPicksAWinnerResetsAndSendsMoney() public raffleEntered skipForm{
         //raffleEntered - with that we already have a player
 
         // Arrange
